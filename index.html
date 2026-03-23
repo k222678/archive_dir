@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>档案目录录入系统</title>
+<style>
+
+  :root {
+    --bg: #f0f2f5;
+    --card: #ffffff;
+    --primary: #1a6b8a;
+    --primary-light: #2a9dbf;
+    --selected: #0d7fa5;
+    --selected-text: #ffffff;
+    --accent: #e8a020;
+    --edit-btn: #27ae60;
+    --danger: #e74c3c;
+    --text: #1a2332;
+    --text-muted: #6b7c93;
+    --border: #d1dce8;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'HarmonyOS Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 20px;
+  }
+
+  /* Header */
+  .app-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    padding: 16px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(13,127,165,0.3);
+  }
+  .app-header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .app-header p {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-top: 2px;
+  }
+
+  /* Main content */
+  .main {
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Option group card */
+  .group-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .group-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .group-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    flex: 1;
+    padding-right: 8px;
+  }
+
+  .edit-btn {
+    background: var(--edit-btn);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+  }
+  .edit-btn:active { opacity: 0.7; }
+
+  .options-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .option-btn {
+    border: 2px solid var(--border);
+    background: white;
+    border-radius: var(--radius-sm);
+    padding: 10px 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    text-align: center;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    word-break: break-all;
+  }
+  .option-btn:active { transform: scale(0.96); }
+  .option-btn.selected {
+    background: var(--selected);
+    border-color: var(--selected);
+    color: var(--selected-text);
+    box-shadow: 0 2px 8px rgba(13,127,165,0.35);
+  }
+
+  /* Large option (2-col group) */
+  .options-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Action area */
+  .action-area {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+  }
+  .action-btn:active { transform: scale(0.97); opacity: 0.85; }
+
+  .btn-record { background: var(--primary); color: white; }
+  .btn-modify { background: var(--accent); color: white; }
+  .btn-save { background: var(--edit-btn); color: white; }
+
+  .status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 4px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .record-count {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .record-count span {
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 18px;
+  }
+
+  /* Preview of current selection */
+  .selection-preview {
+    background: #f7fafd;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-top: 10px;
+    border: 1px dashed var(--border);
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    min-height: 40px;
+  }
+  .selection-preview .sel-item {
+    display: inline-block;
+    background: var(--selected);
+    color: white;
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin: 2px 3px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* ========== MODAL ========== */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 16px 16px 0 0;
+    width: 100%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-header {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--primary); }
+  .modal-close {
+    width: 32px; height: 32px;
+    border: none; background: var(--bg);
+    border-radius: 50%; cursor: pointer;
+    font-size: 18px; display: flex; align-items: center; justify-content: center;
+  }
+
+  .modal-body {
+    overflow-y: auto;
+    flex: 1;
+    padding: 12px;
+  }
+
+  /* Group name edit */
+  .group-name-edit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .group-name-edit label { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+  .group-name-edit input {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+  }
+  .group-name-edit input:focus { border-color: var(--primary); }
+
+  /* Sortable list */
+  .sort-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 60px;
+  }
+
+  .sort-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow 0.15s;
+  }
+  .sort-item.dragging {
+    opacity: 0.5;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+  .sort-item.drag-over { border-color: var(--primary); background: #eef7fb; }
+
+  .drag-handle {
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+
+  .sort-item-text {
+    flex: 1;
+    font-size: 14px;
+  }
+
+  .sort-item-edit {
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    flex: 1;
+    outline: none;
+    min-width: 0;
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* Add option input */
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    padding: 12px;
+  }
+  .add-input {
+    flex: 1;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+  }
+  .add-input:focus { border-color: var(--primary); }
+  .add-confirm {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .modal-footer {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .modal-cancel {
+    flex: 1;
+    padding: 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: white;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text-muted);
+  }
+  .modal-save {
+    flex: 2;
+    padding: 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--primary);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    color: white;
+    letter-spacing: 0.5px;
+  }
+
+  /* Records Modal */
+  .records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .record-item {
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.8;
+    position: relative;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .record-index {
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 24px;
+    font-size: 12px;
+  }
+  .record-tags { flex: 1; }
+  .record-tag {
+    display: inline-block;
+    background: var(--selected);
+    color: white;
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin: 2px 2px;
+    font-size: 12px;
+  }
+  .record-field { font-size: 11px; color: var(--text-muted); }
+  .record-del { color: var(--danger); font-size: 20px; cursor: pointer; border: none; background: none; flex-shrink: 0; }
+
+  /* Save filename modal */
+  .filename-input-wrap {
+    padding: 16px;
+  }
+  .filename-input-wrap label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .filename-input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+  }
+  .filename-input:focus { border-color: var(--primary); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: rgba(26,107,138,0.95);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 500;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Year range quick add */
+  .year-quick {
+    padding: 8px 0 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .year-quick-btn {
+    background: #eef7fb;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--primary);
+  }
+</style>
+<script>
+// ===== Minimal XLSX Writer (pure JS, no dependencies) =====
+const MiniXLSX = (() => {
+  // CRC32
+  const crcTable = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c;
+    }
+    return t;
+  })();
+  function crc32(buf) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) c = crcTable[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function u16(n) {
+    return new Uint8Array([n & 0xFF, (n >> 8) & 0xFF]);
+  }
+  function u32(n) {
+    n = n >>> 0;
+    return new Uint8Array([n & 0xFF, (n >> 8) & 0xFF, (n >> 16) & 0xFF, (n >> 24) & 0xFF]);
+  }
+
+  function concat(...arrays) {
+    const total = arrays.reduce((s, a) => s + a.length, 0);
+    const out = new Uint8Array(total);
+    let pos = 0;
+    for (const a of arrays) { out.set(a, pos); pos += a.length; }
+    return out;
+  }
+
+  // DOS time: 2024-01-01 00:00:00
+  const DOS_DATE = new Uint8Array([0x21, 0x58]); // 2024-01-01
+  const DOS_TIME = new Uint8Array([0x00, 0x00]);
+
+  function buildZip(files) {
+    const enc = new TextEncoder();
+    const localParts = [];
+    const centralParts = [];
+    let offset = 0;
+
+    for (const f of files) {
+      const nameBytes = enc.encode(f.name);
+      const data = (f.data instanceof Uint8Array) ? f.data : enc.encode(f.data);
+      const crc = crc32(data);
+      const size = data.length;
+      const nameLen = u16(nameBytes.length);
+      const extra = new Uint8Array(0);
+
+      // Local file header (30 bytes + name)
+      const lfh = concat(
+        new Uint8Array([0x50, 0x4B, 0x03, 0x04]), // signature
+        new Uint8Array([0x14, 0x00]),               // version needed: 2.0
+        new Uint8Array([0x00, 0x00]),               // general purpose flag
+        new Uint8Array([0x00, 0x00]),               // compression: stored
+        DOS_TIME,                                   // last mod time
+        DOS_DATE,                                   // last mod date
+        u32(crc),                                   // crc32
+        u32(size),                                  // compressed size
+        u32(size),                                  // uncompressed size
+        nameLen,                                    // filename length
+        new Uint8Array([0x00, 0x00]),               // extra field length
+        nameBytes
+      );
+
+      localParts.push(lfh, data);
+
+      // Central directory entry (46 bytes + name)
+      const cde = concat(
+        new Uint8Array([0x50, 0x4B, 0x01, 0x02]), // signature
+        new Uint8Array([0x14, 0x00]),               // version made by: 2.0 / MS-DOS
+        new Uint8Array([0x14, 0x00]),               // version needed: 2.0
+        new Uint8Array([0x00, 0x00]),               // general purpose flag
+        new Uint8Array([0x00, 0x00]),               // compression: stored
+        DOS_TIME,
+        DOS_DATE,
+        u32(crc),
+        u32(size),
+        u32(size),
+        nameLen,
+        new Uint8Array([0x00, 0x00]),               // extra field length
+        new Uint8Array([0x00, 0x00]),               // file comment length
+        new Uint8Array([0x00, 0x00]),               // disk number start
+        new Uint8Array([0x00, 0x00]),               // internal file attributes
+        new Uint8Array([0x00, 0x00, 0x00, 0x00]),   // external file attributes
+        u32(offset),                                // relative offset of local header
+        nameBytes
+      );
+
+      centralParts.push(cde);
+      offset += lfh.length + data.length;
+    }
+
+    const centralDir = concat(...centralParts);
+    const cdSize = centralDir.length;
+    const numFiles = files.length;
+
+    // End of central directory record
+    const eocd = concat(
+      new Uint8Array([0x50, 0x4B, 0x05, 0x06]), // signature
+      new Uint8Array([0x00, 0x00]),               // disk number
+      new Uint8Array([0x00, 0x00]),               // disk with central dir
+      u16(numFiles),                              // entries on this disk
+      u16(numFiles),                              // total entries
+      u32(cdSize),                                // size of central directory
+      u32(offset),                                // offset of central directory
+      new Uint8Array([0x00, 0x00])                // comment length
+    );
+
+    return concat(...localParts, centralDir, eocd);
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function colLetter(n) {
+    let s = ''; n++;
+    while (n > 0) { s = String.fromCharCode(64 + (n % 26 || 26)) + s; n = Math.floor((n - 1) / 26); }
+    return s;
+  }
+
+  function writeXLSX(rows, headers, sheetName, filename) {
+    sheetName = sheetName || 'Sheet1';
+    filename = filename || 'export.xlsx';
+
+    const ss = [], ssMap = {};
+    function getSS(s) {
+      s = String(s);
+      if (ssMap[s] === undefined) { ssMap[s] = ss.length; ss.push(s); }
+      return ssMap[s];
+    }
+
+    // Header row
+    const cellRows = [];
+    const hCells = headers.map((h, ci) =>
+      `<c r="${colLetter(ci)}1" t="s"><v>${getSS(h)}</v></c>`
+    );
+    cellRows.push(`<row r="1">${hCells.join('')}</row>`);
+
+    // Data rows
+    rows.forEach((row, ri) => {
+      const cells = headers.map((h, ci) => {
+        const ref = colLetter(ci) + (ri + 2);
+        const val = (row[h] !== undefined && row[h] !== null) ? row[h] : '';
+        if (typeof val === 'number') return `<c r="${ref}"><v>${val}</v></c>`;
+        return `<c r="${ref}" t="s"><v>${getSS(val)}</v></c>`;
+      });
+      cellRows.push(`<row r="${ri + 2}">${cells.join('')}</row>`);
+    });
+
+    // Column widths
+    const colDefs = headers.map((h, i) => {
+      const maxLen = Math.max(h.length, ...rows.map(r => String(r[h] || '').length));
+      const w = Math.min(Math.max(maxLen * 2, 10), 50);
+      return `<col min="${i+1}" max="${i+1}" width="${w.toFixed(1)}" customWidth="1"/>`;
+    }).join('');
+
+    const sharedStringsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+      `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+      `count="${ss.length}" uniqueCount="${ss.length}">` +
+      ss.map(s => `<si><t xml:space="preserve">${esc(s)}</t></si>`).join('') +
+      `</sst>`;
+
+    const xmlFiles = [
+      { name: '[Content_Types].xml', data:
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">` +
+        `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>` +
+        `<Default Extension="xml" ContentType="application/xml"/>` +
+        `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>` +
+        `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>` +
+        `<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>` +
+        `<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>` +
+        `</Types>`
+      },
+      { name: '_rels/.rels', data:
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>` +
+        `</Relationships>`
+      },
+      { name: 'xl/workbook.xml', data:
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+        `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<fileVersion appName="xl" lastEdited="5" lowestEdited="5"/>` +
+        `<workbookPr date1904="0"/>` +
+        `<sheets><sheet name="${esc(sheetName)}" sheetId="1" r:id="rId1"/></sheets>` +
+        `</workbook>`
+      },
+      { name: 'xl/_rels/workbook.xml.rels', data:
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>` +
+        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>` +
+        `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
+        `</Relationships>`
+      },
+      { name: 'xl/worksheets/sheet1.xml', data:
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+        `xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<sheetViews><sheetView workbookViewId="0"/></sheetViews>` +
+        `<cols>${colDefs}</cols>` +
+        `<sheetData>${cellRows.join('')}</sheetData>` +
+        `</worksheet>`
+      },
+      { name: 'xl/sharedStrings.xml', data: sharedStringsXml },
+      { name: 'xl/styles.xml', data:
+        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<fonts count="1"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font></fonts>` +
+        `<fills count="2">` +
+        `<fill><patternFill patternType="none"/></fill>` +
+        `<fill><patternFill patternType="gray125"/></fill>` +
+        `</fills>` +
+        `<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>` +
+        `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>` +
+        `<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs>` +
+        `<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>` +
+        `</styleSheet>`
+      }
+    ];
+
+    const zipData = buildZip(xmlFiles);
+    const blob = new Blob([zipData], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    if (window.navigator && window.navigator.msSaveBlob) {
+      window.navigator.msSaveBlob(blob, filename);
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1000);
+  }
+
+  return { writeXLSX };
+})();
+// ===== End MiniXLSX =====
+</script>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>档案目录录入系统</h1>
+</div>
+
+<div class="main" id="mainArea">
+  <!-- Groups rendered by JS -->
+</div>
+
+<!-- Action Area -->
+<div class="main" style="padding-top:0">
+  <div class="action-area">
+    <div class="selection-preview" id="selPreview">
+      <span style="color:#aaa">（当前未选择任何选项）</span>
+    </div>
+    <div class="action-row" style="margin-top:12px">
+      <button class="action-btn btn-modify" onclick="openModifyModal()">修 改</button>
+      <button class="action-btn btn-record" onclick="recordEntry()">录 入</button>
+    </div>
+    <div class="status-bar">
+      <div class="record-count">已录入 <span id="countNum">0</span> 条记录</div>
+      <button class="action-btn btn-save" style="flex:0;padding:10px 20px;font-size:14px" onclick="openSaveModal()">保 存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Group Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="editModalTitle">编辑选项组</span>
+      <button class="modal-close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="group-name-edit">
+        <label>组名称：</label>
+        <input type="text" id="editGroupName" placeholder="输入组名称">
+      </div>
+      <div class="year-quick" id="yearQuickAdd" style="display:none">
+        快速添加年份范围：
+        <button class="year-quick-btn" onclick="quickAddYears(2010,2030)">2010–2030</button>
+        <button class="year-quick-btn" onclick="quickAddYears(2000,2010)">2000–2009</button>
+        <button class="year-quick-btn" onclick="quickAddYears(1990,1999)">1990–1999</button>
+      </div>
+      <div class="sort-list" id="sortList"></div>
+    </div>
+    <div class="add-row">
+      <input class="add-input" id="newOptionInput" placeholder="输入新选项名称…" onkeydown="if(event.key==='Enter')addNewOption()">
+      <button class="add-confirm" onclick="addNewOption()">添加</button>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeEditModal()">取消</button>
+      <button class="modal-save" onclick="saveGroupEdit()">保存更改</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modify Records Modal -->
+<div class="modal-overlay" id="modifyModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">修改已录入记录</span>
+      <button class="modal-close" onclick="document.getElementById('modifyModal').classList.remove('active')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="records-list" id="recordsList"></div>
+      <div id="emptyRecords" style="text-align:center;color:#aaa;padding:30px;font-size:14px">暂无录入记录</div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-save" onclick="document.getElementById('modifyModal').classList.remove('active')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save Modal -->
+<div class="modal-overlay" id="saveModal">
+  <div class="modal" style="border-radius:16px 16px 0 0">
+    <div class="modal-header">
+      <span class="modal-title">保存文件</span>
+      <button class="modal-close" onclick="document.getElementById('saveModal').classList.remove('active')">✕</button>
+    </div>
+    <div class="filename-input-wrap">
+      <label>请输入文件名（将保存为 .xlsx 格式）：</label>
+      <input class="filename-input" id="filenameInput" placeholder="例：2024年档案目录（无需填扩展名）" value="">
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="document.getElementById('saveModal').classList.remove('active')">取消</button>
+      <button class="modal-save" onclick="doSave()">确认保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== DATA ==========
+let groups = [
+  {
+    id: 'g1',
+    name: '档案类型',
+    cols: 3,
+    multi: true,
+    options: ['出生申报', '身份证', '市外迁入', '非主项变更',],
+    selected: []
+  },
+  {
+    id: 'g2',
+    name: '年份',
+    cols: 3,
+    multi: false,
+    options: Array.from({length:14}, (_,i)=>(2013+i).toString()),
+    selected: null
+  },
+  {
+    id: 'g3',
+    name: '部门',
+    cols: 2,
+    multi: false,
+    options: ['马山子派出所', '岔尖派出所'],
+    selected: null
+  }
+];
+
+let records = [];
+let editingGroupId = null;
+let dragSrcIndex = null;
+
+function isSelected(g, opt) {
+  if (g.multi) return Array.isArray(g.selected) && g.selected.includes(opt);
+  return g.selected === opt;
+}
+
+// ========== RENDER ==========
+function renderAll() {
+  const main = document.getElementById('mainArea');
+  main.innerHTML = '';
+  groups.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    const multiTag = g.multi ? '<span style="font-size:10px;background:#e8f4f8;color:#1a6b8a;border-radius:3px;padding:1px 5px;margin-left:6px;font-weight:600">多选</span>' : '';
+    card.innerHTML = `
+      <div class="group-header">
+        <div class="group-name">${g.name}${multiTag}</div>
+        <button class="edit-btn" onclick="openEditModal('${g.id}')">编辑</button>
+      </div>
+      <div class="options-grid ${g.cols===2?'options-grid-2':''}" id="grid_${g.id}">
+        ${g.options.map((opt,i)=>`
+          <button class="option-btn ${isSelected(g,opt)?'selected':''}"
+            onclick="selectOption('${g.id}','${opt.replace(/'/g,"\\'")}')">
+            ${opt}
+          </button>`).join('')}
+      </div>
+    `;
+    main.appendChild(card);
+  });
+  updatePreview();
+}
+
+function selectOption(gid, val) {
+  const g = groups.find(x=>x.id===gid);
+  if (!g) return;
+  if (g.multi) {
+    if (!Array.isArray(g.selected)) g.selected = [];
+    const idx = g.selected.indexOf(val);
+    if (idx >= 0) g.selected.splice(idx, 1);
+    else g.selected.push(val);
+  } else {
+    g.selected = g.selected === val ? null : val;
+  }
+  renderAll();
+}
+
+function updatePreview() {
+  const preview = document.getElementById('selPreview');
+  const hasAny = groups.some(g => g.multi ? (g.selected && g.selected.length > 0) : g.selected);
+  if (!hasAny) {
+    preview.innerHTML = '<span style="color:#aaa">（当前未选择任何选项）</span>';
+    return;
+  }
+  preview.innerHTML = groups.filter(g => g.multi ? g.selected && g.selected.length : g.selected).map(g => {
+    const vals = g.multi ? g.selected : [g.selected];
+    return `<span style="font-size:11px;color:#999">${g.name}：</span>` +
+      vals.map(v=>`<span class="sel-item">${v}</span>`).join('') + ' ';
+  }).join('');
+}
+
+// ========== RECORD ==========
+function recordEntry() {
+  const entry = {};
+  let hasAny = false;
+  groups.forEach(g => {
+    const hasVal = g.multi ? (g.selected && g.selected.length > 0) : g.selected;
+    if (hasVal) {
+      entry[g.name] = g.multi ? g.selected.join('、') : g.selected;
+      hasAny = true;
+    }
+  });
+  if (!hasAny) { showToast('请至少选择一个选项'); return; }
+  entry._time = new Date().toLocaleString('zh-CN');
+  entry._id = Date.now();
+  records.push(entry);
+  document.getElementById('countNum').textContent = records.length;
+  showToast(`已录入第 ${records.length} 条`);
+}
+
+// ========== MODIFY MODAL ==========
+function openModifyModal() {
+  const list = document.getElementById('recordsList');
+  const empty = document.getElementById('emptyRecords');
+  if (!records.length) {
+    list.innerHTML = '';
+    empty.style.display = '';
+  } else {
+    empty.style.display = 'none';
+    list.innerHTML = records.map((r,i)=>{
+      const tags = Object.entries(r)
+        .filter(([k])=>!k.startsWith('_'))
+        .map(([k,v])=>`<span class="record-tag" title="${k}">${v}</span>`)
+        .join('');
+      return `<div class="record-item">
+        <div class="record-index">#${i+1}</div>
+        <div class="record-tags">${tags}<br><span class="record-field">${r._time}</span></div>
+        <button class="record-del" onclick="deleteRecord(${r._id})">×</button>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('modifyModal').classList.add('active');
+}
+
+function deleteRecord(id) {
+  if (!confirm('确认删除这条记录？')) return;
+  records = records.filter(r=>r._id!==id);
+  document.getElementById('countNum').textContent = records.length;
+  openModifyModal();
+  showToast('已删除');
+}
+
+// ========== EDIT GROUP MODAL ==========
+function openEditModal(gid) {
+  editingGroupId = gid;
+  const g = groups.find(x=>x.id===gid);
+  document.getElementById('editModalTitle').textContent = `编辑：${g.name}`;
+  document.getElementById('editGroupName').value = g.name;
+  
+  // Show year quick-add if name contains 年
+  const isYear = g.name.includes('年') || g.options.some(o=>/^\d{4}$/.test(o));
+  document.getElementById('yearQuickAdd').style.display = isYear ? '' : 'none';
+  
+  renderSortList(g.options);
+  document.getElementById('newOptionInput').value = '';
+  document.getElementById('editModal').classList.add('active');
+}
+
+function renderSortList(options) {
+  const list = document.getElementById('sortList');
+  list.innerHTML = options.map((opt, i) => `
+    <div class="sort-item" draggable="true"
+      ondragstart="onDragStart(event,${i})"
+      ondragover="onDragOver(event,${i})"
+      ondrop="onDrop(event,${i})"
+      ondragend="onDragEnd()"
+      data-index="${i}">
+      <span class="drag-handle">⠿</span>
+      <input class="sort-item-edit" value="${opt}" onchange="updateOptionText(${i}, this.value)">
+      <button class="del-btn" onclick="deleteOption(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+function getCurrentEditOptions() {
+  return Array.from(document.querySelectorAll('.sort-item-edit')).map(inp=>inp.value.trim()).filter(Boolean);
+}
+
+function updateOptionText(i, val) {
+  // live — will be read on save
+}
+
+function deleteOption(i) {
+  const opts = getCurrentEditOptions();
+  opts.splice(i, 1);
+  renderSortList(opts);
+}
+
+function addNewOption() {
+  const inp = document.getElementById('newOptionInput');
+  const val = inp.value.trim();
+  if (!val) return;
+  const opts = getCurrentEditOptions();
+  if (opts.includes(val)) { showToast('该选项已存在'); return; }
+  opts.push(val);
+  renderSortList(opts);
+  inp.value = '';
+  inp.focus();
+  // scroll to bottom
+  document.querySelector('#editModal .modal-body').scrollTop = 9999;
+}
+
+function quickAddYears(from, to) {
+  const opts = getCurrentEditOptions();
+  for (let y=from; y<=to; y++) {
+    const s = y.toString();
+    if (!opts.includes(s)) opts.push(s);
+  }
+  renderSortList(opts);
+}
+
+function saveGroupEdit() {
+  const g = groups.find(x=>x.id===editingGroupId);
+  const newName = document.getElementById('editGroupName').value.trim();
+  const opts = getCurrentEditOptions();
+  if (!newName) { showToast('组名称不能为空'); return; }
+  if (!opts.length) { showToast('至少保留一个选项'); return; }
+  g.name = newName;
+  g.options = opts;
+  if (g.multi) {
+    g.selected = (g.selected || []).filter(v => opts.includes(v));
+  } else {
+    if (g.selected && !opts.includes(g.selected)) g.selected = null;
+  }
+  closeEditModal();
+  renderAll();
+  showToast('已保存');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('active');
+}
+
+// ========== DRAG SORT ==========
+function onDragStart(e, i) {
+  dragSrcIndex = i;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function onDragOver(e, i) {
+  e.preventDefault();
+  document.querySelectorAll('.sort-item').forEach(el=>el.classList.remove('drag-over'));
+  if (i !== dragSrcIndex) e.currentTarget.classList.add('drag-over');
+}
+function onDrop(e, toIndex) {
+  e.preventDefault();
+  if (dragSrcIndex === null || dragSrcIndex === toIndex) return;
+  const opts = getCurrentEditOptions();
+  const [moved] = opts.splice(dragSrcIndex, 1);
+  opts.splice(toIndex, 0, moved);
+  renderSortList(opts);
+  dragSrcIndex = null;
+}
+function onDragEnd() {
+  document.querySelectorAll('.sort-item').forEach(el=>{
+    el.classList.remove('dragging','drag-over');
+  });
+  dragSrcIndex = null;
+}
+
+// ========== SAVE ==========
+function openSaveModal() {
+  if (!records.length) { showToast('还没有录入任何记录'); return; }
+  document.getElementById('saveModal').classList.add('active');
+  setTimeout(() => document.getElementById('filenameInput').focus(), 300);
+}
+
+function doSave() {
+  let name = document.getElementById('filenameInput').value.trim() || '档案目录';
+  name = name.replace(/[\\/:*?"<>|]/g,'_');
+
+  const fieldOrder = ['序号', ...groups.map(g=>g.name), '录入时间'];
+  const exportData = records.map((r, i) => {
+    const row = {};
+    row['序号'] = i + 1;
+    groups.forEach(g => { row[g.name] = r[g.name] || ''; });
+    row['录入时间'] = r._time;
+    return row;
+  });
+
+  MiniXLSX.writeXLSX(exportData, fieldOrder, '档案目录', name + '.xlsx');
+
+  records = [];
+  document.getElementById('countNum').textContent = 0;
+  document.getElementById('saveModal').classList.remove('active');
+  showToast(`已保存：${name}.xlsx，记录已清空`);
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+// ========== INIT ==========
+renderAll();
+</script>
+</body>
+</html>
